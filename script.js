@@ -69,7 +69,7 @@ async function generatePassword() {
 
   const site = document.getElementById('siteName').value.trim().toLowerCase();
   const salt = document.getElementById('salt').value.trim();
-  const master = document.getElementById('masterPassword').value;
+  const master = document.getElementById('masterPassword').value.trim();
   const length = parseInt(document.getElementById('length').value);
   const useLower = document.getElementById('lowercase').checked;
   const useUpper = document.getElementById('uppercase').checked;
