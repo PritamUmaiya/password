@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Password Generator</title>
+  <style>
+    :root {
+      --bg: #f4f4f4;
+      --text: #111;
+      --card: #fff;
+      --input-bg: #fff;
+      --border: #ccc;
+    }
+    body.dark {
+      --bg: #121212;
+      --text: #eee;
+      --card: #1e1e1e;
+      --input-bg: #2c2c2c;
+      --border: #444;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .container {
+      background: var(--card);
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 480px;
+      box-sizing: border-box;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 1.8em;
+    }
+
+    .note {
+      font-size: 0.9em;
+      margin-bottom: 12px;
+      opacity: 0.8;
+    }
+
+    input[type="text"],
+    input[type="password"],
+    input[type="number"] {
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      margin-bottom: 14px;
+      font-size: 1em;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text);
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 1em;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: 0.2s;
+    }
+
+    #toggleTheme {
+      background: #333;
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    #copyBtn {
+      background: #28a745;
+      color: white;
+    }
+
+    .generate-btn {
+      background: #007bff;
+      color: white;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .row label {
+      flex: 1 1 48%;
+      display: flex;
+      align-items: center;
+      font-size: 0.95em;
+      gap: 6px;
+    }
+
+    #passwordDisplay {
+      margin-top: 20px;
+      padding-top: 20px;
+      background: var(--border);
+      border-radius: 10px;
+      font-family: monospace;
+      word-break: break-word;
+      font-size: 1.1em;
+      text-align: center;
+      color: var(--text);
+      height: 40px;
+    }
+
+    #copyMsg {
+      color: green;
+      font-size: 0.9em;
+      margin-top: 6px;
+      display: none;
+    }
+
+    @media (max-width: 480px) {
+      h2 {
+        font-size: 1.5em;
+      }
+
+      .row label {
+        flex: 1 1 100%;
+      }
+
+      button {
+        font-size: 0.95em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button id="toggleTheme">Toggle Dark Mode</button>
+    <h2>Password Generator</h2>
+    <div class="note">
+      Site name: lowercase only, no <code>.com</code>, <code>https</code> etc. (e.g. <strong>google</strong>, <strong>facebook2</strong>)
+    </div>
+
+    <input type="text" id="site" placeholder="Site name (e.g. google)">
+    <input type="password" id="master" placeholder="Master password" oninput="syncLength()">
+
+    <label for="length">Password Length</label>
+    <input type="number" id="length" min="10" value="10">
+
+    <div class="row">
+      <label><input type="checkbox" id="includeLower" checked> Lowercase</label>
+      <label><input type="checkbox" id="includeUpper" checked> Uppercase</label>
+      <label><input type="checkbox" id="includeNumber" checked> Numbers</label>
+      <label><input type="checkbox" id="includeSymbol" checked> Symbols</label>
+    </div>
+
+    <button class="generate-btn" onclick="generatePassword()">Generate Password</button>
+    <div id="passwordDisplay"></div>
+    <button id="copyBtn" onclick="copyPassword()" style="display:none;">Copy to Clipboard</button>
+    <div id="copyMsg">Copied!</div>
+  </div>
+
+  <script>
+    const charset = {
+      lower: 'abcdefghijklmnopqrstuvwxyz',
+      upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+      number: '0123456789',
+      symbol: '!@#$%^&*()-_=+[]{};:,.<>?'
+    };
+
+    function syncLength() {
+      const master = document.getElementById("master").value;
+      const lengthInput = document.getElementById("length");
+      if (!lengthInput.dataset.manual) {
+        lengthInput.value = master.length;
+      }
+    }
+
+    document.getElementById("length").addEventListener("input", () => {
+      document.getElementById("length").dataset.manual = true;
+    });
+
+    document.getElementById("toggleTheme").onclick = () => {
+      document.body.classList.toggle("dark");
+    };
+
+    async function generatePassword() {
+      const site = document.getElementById("site").value.trim().toLowerCase();
+      const master = document.getElementById("master").value;
+      const length = parseInt(document.getElementById("length").value);
+      const useLower = document.getElementById("includeLower").checked;
+      const useUpper = document.getElementById("includeUpper").checked;
+      const useNumber = document.getElementById("includeNumber").checked;
+      const useSymbol = document.getElementById("includeSymbol").checked;
+
+      const display = document.getElementById("passwordDisplay");
+      const copyBtn = document.getElementById("copyBtn");
+      const copyMsg = document.getElementById("copyMsg");
+      copyMsg.style.display = "none";
+
+      if (!site || /[^a-z0-9!@#$%^&*()-_=+]/i.test(site)) {
+        alert("Invalid site name. Use lowercase and avoid URLs.");
+        return;
+      }
+
+      if (master.length < 10 ||
+          !/[a-z]/.test(master) ||
+          !/[A-Z]/.test(master) ||
+          !/[0-9]/.test(master) ||
+          !/[^a-zA-Z0-9]/.test(master)) {
+        alert("Master password must be at least 10 characters and include uppercase, lowercase, number, and special character.");
+        return;
+      }
+
+      const selectedTypes = [];
+      if (useLower) selectedTypes.push('lower');
+      if (useUpper) selectedTypes.push('upper');
+      if (useNumber) selectedTypes.push('number');
+      if (useSymbol) selectedTypes.push('symbol');
+
+      if (selectedTypes.length === 0) {
+        alert("Select at least one character type.");
+        return;
+      }
+
+      if (length < selectedTypes.length * 2) {
+        alert(`Length must be at least ${selectedTypes.length * 2} to include 2 of each selected type.`);
+        return;
+      }
+
+      const input = site + "|" + master;
+      const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      let pointer = 0;
+
+      // Step 1: Ensure 2 chars of each selected type
+      let passwordChars = [];
+      selectedTypes.forEach(type => {
+        for (let i = 0; i < 2; i++) {
+          passwordChars.push(charset[type][hashArray[pointer++ % hashArray.length] % charset[type].length]);
+        }
+      });
+
+      // Step 2: Fill rest from combined pool
+      let remaining = length - passwordChars.length;
+      let allChars = selectedTypes.map(t => charset[t]).join('');
+      for (let i = 0; i < remaining; i++) {
+        passwordChars.push(allChars[hashArray[pointer++ % hashArray.length] % allChars.length]);
+      }
+
+      // Step 3: Shuffle the password
+      for (let i = passwordChars.length - 1; i > 0; i--) {
+        const j = hashArray[pointer++ % hashArray.length] % (i + 1);
+        [passwordChars[i], passwordChars[j]] = [passwordChars[j], passwordChars[i]];
+      }
+
+      display.textContent = passwordChars.join('');
+      copyBtn.style.display = "inline-block";
+    }
+
+    function copyPassword() {
+      const passText = document.getElementById("passwordDisplay").textContent;
+      navigator.clipboard.writeText(passText).then(() => {
+        const copyMsg = document.getElementById("copyMsg");
+        copyMsg.style.display = "block";
+        setTimeout(() => copyMsg.style.display = "none", 1500);
+      });
+    }
+  </script>
+</body>
+</html>
