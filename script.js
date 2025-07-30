@@ -340,12 +340,12 @@ class PasswordGenerator {
                 </svg>
             `;
             copyButton.classList.add('btn-success');
-            copyButton.classList.remove('btn-outline-secondary');
+            copyButton.classList.remove('btn-primary');
 
             setTimeout(() => {
                 copyButton.innerHTML = originalHTML;
                 copyButton.classList.remove('btn-success');
-                copyButton.classList.add('btn-outline-secondary');
+                copyButton.classList.add('btn-primary');
             }, 2000);
 
         } catch (err) {
