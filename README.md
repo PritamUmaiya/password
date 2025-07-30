@@ -1,56 +1,120 @@
-# Password Generator
+# 🔐 Dedicated Password Generator
 
-A simple, secure password generator web app that creates strong, site-specific passwords from your master password and site name.
+A secure, client-side password generator that creates consistent, strong passwords using SHA-256 hashing. No data is stored on servers - everything happens in your browser.
 
-## Features
+## ✨ Features
 
-- Generates passwords based on site name and master password
+- **🔒 Secure**: Uses SHA-256 hashing algorithm for password generation
+- **🎯 Consistent**: Same inputs always generate the same password
+- **📱 Responsive**: Works on desktop and mobile devices
+- **🎨 Modern UI**: Clean Bootstrap-based dark theme interface
+- **📋 Clipboard**: One-click copy to clipboard with visual feedback
+- **⚙️ Customizable**: Flexible password options and settings
+- **💾 Persistent**: Settings saved locally for convenience
+- **🔐 Privacy-First**: No data sent to servers, works completely offline
 
-- Optional salt input for extra personalization
+## 🚀 Quick Start
 
-- Enforces strong master passwords (uppercase, lowercase, number, symbol)
+1. Clone the repository:
+```bash
+git clone https://github.com/PritamUmaiya/password.git
+cd password
+```
 
-- Ensures at least 2 characters from each selected character type
+2. Open `index.html` in your web browser
 
-- Password length customizable (minimum based on character types)
+3. Start generating secure passwords!
 
-- Allows alphanumeric site names with single spaces
+## 📋 How It Works
 
-- Copy to clipboard functionality
+The password generator combines three inputs using SHA-256 hashing:
 
-- Responsive design for desktop and mobile
+1. **Website Name** - The service you're creating a password for
+2. **Master Password** - Your personal master password
+3. **Phrase** - An additional phrase for extra security
 
-## How It Works
+**Formula**: `SHA-256(website + masterpassword + phrase) → Secure Password`
 
-Enter your site name (e.g., Google, Facebook 2) and your master password. Optionally, include a custom salt. The app uses SHA-256 hashing to generate a consistent, strong password you can reproduce anytime without storing anything.
+### Input Requirements
 
-## Usage
+| Field | Requirements |
+|-------|-------------|
+| **Website Name** | Letters, numbers, and spaces only (case insensitive) |
+| **Master Password** | 8-50 characters, must include uppercase, lowercase, numbers, and symbols. No spaces allowed |
+| **Phrase** | Letters, numbers, and spaces only (case insensitive) |
 
-- Enter the site name (alphanumeric, max 50 chars, single spaces allowed)
+## ⚙️ Password Settings
 
-- Optionally, enter a salt (max 50 chars, case-sensitive)
+Customize your generated passwords with these options:
 
-- Enter your master password (10–50 chars, must include uppercase, lowercase, number, and symbol)
+- **✅ Uppercase Letters** (A-Z) - *Default: Enabled*
+- **✅ Lowercase Letters** (a-z) - *Default: Enabled*  
+- **✅ Numbers** (0-9) - *Default: Enabled*
+- **❌ Symbols** (!@#$%^&*...) - *Default: Disabled*
+- **📏 Length** (4-50 characters) - *Default: 8*
 
-- Adjust password length or character type options if needed
+Settings are automatically saved and restored when you revisit the site.
 
-- Click Generate Password
+## 🔧 Technical Details
 
-- Copy your generated password to use on the site
+### Security Features
+- **Client-side only**: No data transmitted to servers
+- **SHA-256 hashing**: Cryptographically secure hash function
+- **Deterministic generation**: Same inputs = same password every time
+- **Character set enforcement**: Guarantees at least one character from each selected type
+- **No storage of sensitive data**: Only settings preferences are saved locally
 
-## Security Note
+### Browser Compatibility
+- Modern browsers with Web Crypto API support
+- Chrome 37+, Firefox 34+, Safari 7+, Edge 12+
+- Fallback clipboard functionality for older browsers
 
-- All hashing is done client-side; no data is sent or saved.
+### Dependencies
+- Bootstrap 5.x (CSS framework)
+- No external JavaScript libraries required
 
-- Your master password is never stored—only used to derive site-specific passwords.
+## 📱 Usage Examples
 
-- Consistent output ensures reproducibility across sessions.
+### Example 1: Basic Usage
+- **Website**: `Gmail`
+- **Master Password**: `MySecure123!`
+- **Phrase**: `work email`
+- **Settings**: Default (8 chars, uppercase, lowercase, numbers)
+- **Result**: `k7Nm2pQx` (example)
 
-## Hosting
+### Example 2: High Security
+- **Website**: `Banking Site`
+- **Master Password**: `MySecure123!`
+- **Phrase**: `financial secure`
+- **Settings**: 16 chars, all character types enabled
+- **Result**: `k7N@m2pQ#x9Zt$Vw` (example)
 
-This project can be hosted on GitHub Pages or any static site hosting.
+## 🛡️ Security Best Practices
 
-## License
+1. **Use a strong master password** - This is your most important credential
+2. **Keep your master password secret** - Never share it with anyone
+3. **Use unique phrases** - Different phrases for different types of accounts
+4. **Remember your inputs** - You'll need the exact same inputs to regenerate passwords
+5. **Backup your master password** - Store it securely offline
 
-MIT License © Pritam Umaiya
 
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## ⚠️ Important Notes
+
+- **This tool generates the same password for the same inputs** - This is by design for consistency
+- **Remember your inputs** - You need the exact same website name, master password, and phrase to regenerate a password
+- **Case sensitivity** - Website names and phrases are converted to lowercase, but master passwords are case-sensitive
+- **No password recovery** - If you forget your inputs, you cannot recover the generated password
+
+## 🙏 Acknowledgments
+
+- Bootstrap team for the excellent CSS framework
+- Web Crypto API for secure hashing capabilities
+- The open-source community for inspiration and best practices
+
+---
+
+**⭐ If you find this tool useful, please consider giving it a star on GitHub!**
