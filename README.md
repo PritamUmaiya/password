@@ -7,7 +7,7 @@ A secure, client-side password generator that creates consistent, strong passwor
 - **🔒 Secure**: Uses SHA-256 hashing algorithm for password generation
 - **🎯 Consistent**: Same inputs always generate the same password
 - **📱 Responsive**: Works on desktop and mobile devices
-- **🎨 Modern UI**: Clean Bootstrap-based dark theme interface
+- **🎨 Modern UI**: Clean Bootstrap-based theme interface
 - **📋 Clipboard**: One-click copy to clipboard with visual feedback
 - **⚙️ Customizable**: Flexible password options and settings
 - **💾 Persistent**: Settings saved locally for convenience
@@ -64,15 +64,6 @@ Settings are automatically saved and restored when you revisit the site.
 - **Character set enforcement**: Guarantees at least one character from each selected type
 - **No storage of sensitive data**: Only settings preferences are saved locally
 
-### Browser Compatibility
-- Modern browsers with Web Crypto API support
-- Chrome 37+, Firefox 34+, Safari 7+, Edge 12+
-- Fallback clipboard functionality for older browsers
-
-### Dependencies
-- Bootstrap 5.x (CSS framework)
-- No external JavaScript libraries required
-
 ## 📱 Usage Examples
 
 ### Example 1: Basic Usage
@@ -108,12 +99,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Remember your inputs** - You need the exact same website name, master password, and phrase to regenerate a password
 - **Case sensitivity** - Website names and phrases are converted to lowercase, but master passwords are case-sensitive
 - **No password recovery** - If you forget your inputs, you cannot recover the generated password
-
-## 🙏 Acknowledgments
-
-- Bootstrap team for the excellent CSS framework
-- Web Crypto API for secure hashing capabilities
-- The open-source community for inspiration and best practices
 
 ---
 
