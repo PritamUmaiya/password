@@ -1,150 +1,363 @@
-function togglePassword() {
-  const passwordInput = document.getElementById('masterPassword');
-  const toggleButton = document.getElementById('togglePassword');
-  if (passwordInput.type === 'password') {
-    passwordInput.type = 'text';
-    toggleButton.textContent = 'Hide password';
-  } else {
-    passwordInput.type = 'password';
-    toggleButton.textContent = 'Show password';
-  }
-}
+// Password Generator Script
+class PasswordGenerator {
+    constructor() {
+        this.settings = {
+            uppercase: true,
+            lowercase: true,
+            numbers: true,
+            symbols: false,
+            length: 8
+        };
 
-const charset = {
-  lower: 'abcdefghijklmnopqrstuvwxyz',
-  upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-  number: '0123456789',
-  symbol: '!@#$%^&*()-_=+[]{};:,.<>?'
-};
-
-function showInvalid(inputId, message) {
-  const input = document.getElementById(inputId);
-  const feedback = document.getElementById(inputId + 'Feedback');
-  input.classList.add('is-invalid');
-  feedback.textContent = message;
-}
-
-function clearInvalid() {
-  document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
-}
-
-function validateForm(site, salt, master, length, selectedOptions) {
-  clearInvalid();
-
-  if (!site || site.length > 50 || !/^[a-zA-Z0-9]+(?: [a-zA-Z0-9]+)*$/.test(site)) {
-    showInvalid('siteName', 'Site name must be 1–50 characters, alphanumeric with single spaces between characters (no symbols or double spaces).');
-    return false;
-  }
-
-  if (salt && (salt.length > 50)) {
-    showInvalid('salt', 'Salt cannot exceed 50 characters.');
-    return false;
-  }
-
-  const passwordValid = master.length >= 10 && master.length <= 50 &&
-    /[a-z]/.test(master) &&
-    /[A-Z]/.test(master) &&
-    /[0-9]/.test(master) &&
-    /[^a-zA-Z0-9]/.test(master);
-
-  if (!passwordValid) {
-    showInvalid('masterPassword', 'Master password must be 10–50 characters and include uppercase, lowercase, number, and special character.');
-    return false;
-  }
-
-  if (selectedOptions.length === 0) {
-    document.getElementById('optionsFeedback').textContent = 'Select at least one character type.';
-    return false;
-  }
-
-  if (length < selectedOptions.length * 2) {
-    showInvalid('length', `Length must be at least ${selectedOptions.length * 2} to include 2 of each selected type.`);
-    return false;
-  }
-
-  return true;
-}
-
-async function generatePassword() {
-
-  const site = document.getElementById('siteName').value.trim().toLowerCase();
-  const salt = document.getElementById('salt').value.trim();
-  const master = document.getElementById('masterPassword').value.trim();
-  const length = parseInt(document.getElementById('length').value);
-  const useLower = document.getElementById('lowercase').checked;
-  const useUpper = document.getElementById('uppercase').checked;
-  const useNumber = document.getElementById('numbers').checked;
-  const useSymbol = document.getElementById('symbols').checked;
-
-  const selectedTypes = [];
-  if (useLower) selectedTypes.push('lower');
-  if (useUpper) selectedTypes.push('upper');
-  if (useNumber) selectedTypes.push('number');
-  if (useSymbol) selectedTypes.push('symbol');
-
-  if (!validateForm(site, salt, master, length, selectedTypes)) return;
-
-  const input = site + "|" + (salt || '') + "|" + master;
-  const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  let pointer = 0;
-
-  let passwordChars = [];
-
-  // 2 characters of each selected type
-  selectedTypes.forEach(type => {
-    for (let i = 0; i < 2; i++) {
-      passwordChars.push(charset[type][hashArray[pointer++ % hashArray.length] % charset[type].length]);
+        this.init();
     }
-  });
 
-  let allChars = selectedTypes.map(t => charset[t]).join('');
-  for (let i = passwordChars.length; i < length; i++) {
-    passwordChars.push(allChars[hashArray[pointer++ % hashArray.length] % allChars.length]);
-  }
+    init() {
+        this.loadSettings();
+        this.bindEvents();
+        this.updateSettingsUI();
+    }
 
-  // Shuffle the array
-  for (let i = passwordChars.length - 1; i > 0; i--) {
-    const j = hashArray[pointer++ % hashArray.length] % (i + 1);
-    [passwordChars[i], passwordChars[j]] = [passwordChars[j], passwordChars[i]];
-  }
+    // Load settings from localStorage (using in-memory storage for this demo)
+    loadSettings() {
+        try {
+            const saved = localStorage.getItem('passwordSettings');
+            if (saved) {
+                this.settings = { ...this.settings, ...JSON.parse(saved) };
+            }
+        } catch (e) {
+            // Use default settings if localStorage fails
+        }
+    }
 
-  const generated = passwordChars.join('');
-  const output = document.querySelector('#password');
-  output.value = generated;
+    // Save settings to localStorage (using in-memory storage for this demo)
+    saveSettings() {
+        try {
+            localStorage.setItem('passwordSettings', JSON.stringify(this.settings));
+        } catch (e) {
+            // Handle localStorage not available
+        }
+    }
+
+    // Update UI based on current settings
+    updateSettingsUI() {
+        document.getElementById('uppercase').checked = this.settings.uppercase;
+        document.getElementById('lowercase').checked = this.settings.lowercase;
+        document.getElementById('numbers').checked = this.settings.numbers;
+        document.getElementById('symbols').checked = this.settings.symbols;
+        document.getElementById('length').value = this.settings.length;
+    }
+
+    // Bind all event listeners
+    bindEvents() {
+        // Settings changes
+        ['uppercase', 'lowercase', 'numbers', 'symbols'].forEach(id => {
+            document.getElementById(id).addEventListener('change', (e) => {
+                this.settings[id] = e.target.checked;
+                this.saveSettings();
+                this.generatePasswordIfFormValid();
+            });
+        });
+
+        // Length change
+        document.getElementById('length').addEventListener('input', (e) => {
+            const value = parseInt(e.target.value);
+            if (value >= 4 && value <= 50) {
+                this.settings.length = value;
+                this.saveSettings();
+                this.generatePasswordIfFormValid();
+            }
+        });
+
+        // Reset button
+        document.getElementById('reset').addEventListener('click', () => {
+            this.resetSettings();
+        });
+
+        // Copy button
+        document.getElementById('copy').addEventListener('click', () => {
+            this.copyToClipboard();
+        });
+
+        // Real-time validation
+        document.getElementById('website').addEventListener('input', () => {
+            this.validateWebsite();
+            this.generatePasswordIfFormValid();
+        });
+
+        document.getElementById('masterpassword').addEventListener('input', () => {
+            this.validateMasterPassword();
+            this.generatePasswordIfFormValid();
+        });
+
+        document.getElementById('phrase').addEventListener('input', () => {
+            this.validatePhrase();
+            this.generatePasswordIfFormValid();
+        });
+    }
+
+    // Validate website field
+    validateWebsite() {
+        const website = document.getElementById('website').value;
+        const websiteField = document.getElementById('website');
+        const errorDiv = document.getElementById('websiteError');
+
+        // Only alphabets, numbers, and spaces allowed
+        const validPattern = /^[A-Za-z0-9\s]*$/;
+
+        if (!website.trim()) {
+            this.setFieldError(websiteField, errorDiv, 'Website name is required');
+            return false;
+        }
+
+        if (!validPattern.test(website)) {
+            this.setFieldError(websiteField, errorDiv, 'Only letters, numbers, and spaces are allowed');
+            return false;
+        }
+
+        this.clearFieldError(websiteField, errorDiv);
+        return true;
+    }
+
+    // Validate master password field
+    validateMasterPassword() {
+        const password = document.getElementById('masterpassword').value;
+        const passwordField = document.getElementById('masterpassword');
+        const errorDiv = document.getElementById('masterpasswordError');
+
+        if (!password) {
+            this.setFieldError(passwordField, errorDiv, 'Master password is required');
+            return false;
+        }
+
+        if (password.includes(' ')) {
+            this.setFieldError(passwordField, errorDiv, 'No spaces allowed');
+            return false;
+        }
+
+        if (password.length < 8) {
+            this.setFieldError(passwordField, errorDiv, 'Must be at least 8 characters long');
+            return false;
+        }
+
+        if (password.length > 50) {
+            this.setFieldError(passwordField, errorDiv, 'Must be 50 characters or less');
+            return false;
+        }
+
+        const hasUpper = /[A-Z]/.test(password);
+        const hasLower = /[a-z]/.test(password);
+        const hasNumber = /[0-9]/.test(password);
+        const hasSymbol = /[^A-Za-z0-9]/.test(password);
+
+        if (!hasUpper || !hasLower || !hasNumber || !hasSymbol) {
+            this.setFieldError(passwordField, errorDiv, 'Must include uppercase, lowercase, numbers, and symbols');
+            return false;
+        }
+
+        this.clearFieldError(passwordField, errorDiv);
+        return true;
+    }
+
+    // Validate phrase field
+    validatePhrase() {
+        const phrase = document.getElementById('phrase').value;
+        const phraseField = document.getElementById('phrase');
+        const errorDiv = document.getElementById('phraseError');
+
+        if (!phrase.trim()) {
+            this.setFieldError(phraseField, errorDiv, 'Phrase is required');
+            return false;
+        }
+
+        // Only alphabets, numbers, and spaces allowed
+        const validPattern = /^[A-Za-z0-9\s]*$/;
+
+        if (!validPattern.test(phrase)) {
+            this.setFieldError(phraseField, errorDiv, 'Only letters, numbers, and spaces are allowed');
+            return false;
+        }
+
+        this.clearFieldError(phraseField, errorDiv);
+        return true;
+    }
+
+    // Set field error state
+    setFieldError(field, errorDiv, message) {
+        field.classList.add('is-invalid');
+        field.classList.remove('is-valid');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+
+    // Clear field error state
+    clearFieldError(field, errorDiv) {
+        field.classList.remove('is-invalid');
+        field.classList.add('is-valid');
+        errorDiv.textContent = '';
+        errorDiv.style.display = 'none';
+    }
+
+    // Check if all fields are valid
+    isFormValid() {
+        return this.validateWebsite() && this.validateMasterPassword() && this.validatePhrase();
+    }
+
+    // Generate password if form is valid
+    generatePasswordIfFormValid() {
+        if (this.isFormValid()) {
+            this.generatePassword();
+        } else {
+            document.getElementById('password').value = '';
+        }
+    }
+
+    // Generate password using SHA-256
+    async generatePassword() {
+        if (!this.isFormValid()) {
+            return;
+        }
+
+        // Get and process inputs
+        const website = document.getElementById('website').value.replace(/\s+/g, '').toLowerCase();
+        const masterPassword = document.getElementById('masterpassword').value;
+        const phrase = document.getElementById('phrase').value.replace(/\s+/g, '').toLowerCase();
+
+        // Combine inputs for hashing
+        const combined = website + masterPassword + phrase;
+
+        try {
+            // Generate SHA-256 hash
+            const encoder = new TextEncoder();
+            const data = encoder.encode(combined);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            // Generate password from hash
+            const password = this.createPasswordFromHash(hashHex);
+            document.getElementById('password').value = password;
+
+        } catch (error) {
+            console.error('Error generating password:', error);
+            document.getElementById('password').value = 'Error generating password';
+        }
+    }
+
+    // Create password from hash based on settings
+    createPasswordFromHash(hash) {
+        const chars = this.getCharacterSet();
+        if (chars.length === 0) {
+            return 'Invalid settings';
+        }
+
+        let password = '';
+        const requiredChars = this.getRequiredChars();
+
+        // Ensure at least one character from each selected type
+        let hashIndex = 0;
+        for (const charSet of requiredChars) {
+            if (password.length < this.settings.length) {
+                const charIndex = parseInt(hash.substr(hashIndex % hash.length, 2), 16) % charSet.length;
+                password += charSet[charIndex];
+                hashIndex += 2;
+            }
+        }
+
+        // Fill remaining positions
+        while (password.length < this.settings.length) {
+            const charIndex = parseInt(hash.substr(hashIndex % hash.length, 2), 16) % chars.length;
+            password += chars[charIndex];
+            hashIndex += 2;
+        }
+
+        // Shuffle password using hash
+        return this.shuffleString(password, hash);
+    }
+
+    // Get character set based on settings
+    getCharacterSet() {
+        let chars = '';
+        if (this.settings.uppercase) chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        if (this.settings.lowercase) chars += 'abcdefghijklmnopqrstuvwxyz';
+        if (this.settings.numbers) chars += '0123456789';
+        if (this.settings.symbols) chars += '!@#$%^&*()_+-=[]{}|;:,.<>?';
+        return chars;
+    }
+
+    // Get required character sets for ensuring at least one of each type
+    getRequiredChars() {
+        const sets = [];
+        if (this.settings.uppercase) sets.push('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+        if (this.settings.lowercase) sets.push('abcdefghijklmnopqrstuvwxyz');
+        if (this.settings.numbers) sets.push('0123456789');
+        if (this.settings.symbols) sets.push('!@#$%^&*()_+-=[]{}|;:,.<>?');
+        return sets;
+    }
+
+    // Shuffle string using hash for deterministic randomness
+    shuffleString(str, hash) {
+        const arr = str.split('');
+        for (let i = arr.length - 1; i > 0; i--) {
+            const hashIndex = (i * 2) % hash.length;
+            const j = parseInt(hash.substr(hashIndex, 2), 16) % (i + 1);
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr.join('');
+    }
+
+    // Reset settings to default
+    resetSettings() {
+        this.settings = {
+            uppercase: true,
+            lowercase: true,
+            numbers: true,
+            symbols: false,
+            length: 8
+        };
+        this.saveSettings();
+        this.updateSettingsUI();
+        this.generatePasswordIfFormValid();
+    }
+
+    // Copy password to clipboard
+    async copyToClipboard() {
+        const passwordField = document.getElementById('password');
+        const copyButton = document.getElementById('copy');
+
+        if (!passwordField.value) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(passwordField.value);
+
+            // Visual feedback
+            const originalHTML = copyButton.innerHTML;
+            copyButton.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+            `;
+            copyButton.classList.add('btn-success');
+            copyButton.classList.remove('btn-outline-secondary');
+
+            setTimeout(() => {
+                copyButton.innerHTML = originalHTML;
+                copyButton.classList.remove('btn-success');
+                copyButton.classList.add('btn-outline-secondary');
+            }, 2000);
+
+        } catch (err) {
+            console.error('Failed to copy: ', err);
+            // Fallback for older browsers
+            passwordField.select();
+            document.execCommand('copy');
+        }
+    }
 }
 
-document.getElementById('copy').addEventListener('click', () => {
-  const password = document.querySelector('#password').value;
-  if (!password) return;
-
-  navigator.clipboard.writeText(password).then(() => {
-    const copyBtn = document.getElementById('copy');
-    copyBtn.classList.remove('btn-secondary');
-    copyBtn.classList.add('btn-success');
-    copyBtn.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard-check" viewBox="0 0 16 16">
-      <path fill-rule="evenodd" d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0"/>
-      <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z"/>
-      <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0z"/>
-    </svg>
-    `
-    setTimeout(() => {
-      copyBtn.classList.remove('btn-success');
-      copyBtn.classList.add('btn-secondary');
-      copyBtn.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-          class="bi bi-clipboard" viewBox="0 0 16 16">
-          <path
-              d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z" />
-          <path
-              d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0z" />
-      </svg>
-      `
-    }, 1500);
-  });
-});
-
+// Initialize the password generator when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('generate').addEventListener('click', generatePassword);
-})
+    new PasswordGenerator();
+});
